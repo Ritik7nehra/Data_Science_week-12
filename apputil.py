@@ -1,42 +1,26 @@
 import numpy as np
-from IPython.display import clear_output
-import time
-import seaborn as sns
-import matplotlib.pyplot as plt
 
-
-def update_board(current_board):
-    # your code here ...
-    updated_board = current_board
-
-    return updated_board
-
-
-def show_game(game_board, n_steps=10, pause=0.5):
+def update_board(board: np.ndarray) -> np.ndarray:
     """
-    Show `n_steps` of Conway's Game of Life, given the `update_board` function.
-
-    Parameters
-    ----------
-    game_board : numpy.ndarray
-        A binary array representing the initial starting conditions for Conway's Game of Life. In this array, ` represents a "living" cell and 0 represents a "dead" cell.
-    n_steps : int, optional
-        Number of game steps to run through, by default 10
-    pause : float, optional
-        Number of seconds to wait between steps, by default 0.5
+    Execute one step of Conway's Game of Life on a 2D binary NumPy array.
     """
-    for step in range(n_steps):
-        clear_output(wait=True)
 
-        # update board
-        game_board = update_board(game_board)
+    # ensure it is a numpy array of ints (0 or 1)
+    board = (board != 0).astype(int)
 
-        # show board
-        sns.heatmap(game_board, cmap='tab20c_r', 
-                    cbar=False, square=True, linewidths=1)
-        plt.title(f'Board State at Step {step + 1}')
-        plt.show()
+    # pad with zeros so edges behave normally (no wrap-around)
+    padded = np.pad(board, pad_width=1, mode="constant", constant_values=0)
 
-        # wait for the next step
-        if step + 1 < n_steps:
-            time.sleep(pause)
+    # count neighbors using slices of the padded array
+    neighbors = (
+        padded[:-2, :-2] + padded[:-2, 1:-1] + padded[:-2, 2:] +
+        padded[1:-1, :-2] +                     padded[1:-1, 2:] +
+        padded[2:, :-2] + padded[2:, 1:-1] + padded[2:, 2:]
+    )
+
+    # apply Game of Life rules
+    survive = (board == 1) & ((neighbors == 2) | (neighbors == 3))
+    born = (board == 0) & (neighbors == 3)
+
+    # return new board
+    return (survive | born).astype(int)
