@@ -1,26 +1,52 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import time
 
-def update_board(board: np.ndarray) -> np.ndarray:
+
+def update_board(board):
     """
-    Execute one step of Conway's Game of Life on a 2D binary NumPy array.
+    Takes a binary NumPy array and executes one step of Conway's Game of Life.
     """
+    rows, cols = board.shape
+    new_board = np.zeros((rows, cols), dtype=int)
 
-    # ensure it is a numpy array of ints (0 or 1)
-    board = (board != 0).astype(int)
+    for i in range(rows):
+        for j in range(cols):
 
-    # pad with zeros so edges behave normally (no wrap-around)
-    padded = np.pad(board, pad_width=1, mode="constant", constant_values=0)
+            # Count live neighbors
+            neighbors = board[max(0, i-1):min(rows, i+2),
+                              max(0, j-1):min(cols, j+2)].sum()
 
-    # count neighbors using slices of the padded array
-    neighbors = (
-        padded[:-2, :-2] + padded[:-2, 1:-1] + padded[:-2, 2:] +
-        padded[1:-1, :-2] +                     padded[1:-1, 2:] +
-        padded[2:, :-2] + padded[2:, 1:-1] + padded[2:, 2:]
-    )
+            neighbors -= board[i, j]  # Remove self count
 
-    # apply Game of Life rules
-    survive = (board == 1) & ((neighbors == 2) | (neighbors == 3))
-    born = (board == 0) & (neighbors == 3)
+            # Apply Game of Life Rules
+            if board[i, j] == 1:
+                if neighbors == 2 or neighbors == 3:
+                    new_board[i, j] = 1
+                else:
+                    new_board[i, j] = 0
+            else:
+                if neighbors == 3:
+                    new_board[i, j] = 1
+                else:
+                    new_board[i, j] = 0
 
-    # return new board
-    return (survive | born).astype(int)
+    return new_board
+
+
+def show_game(board, n_steps=5, pause=1):
+    """
+    Displays Conway's Game of Life animation.
+    """
+    plt.figure()
+
+    for step in range(n_steps):
+        plt.clf()
+        plt.imshow(board, cmap="gray")
+        plt.title(f"Step {step}")
+        plt.axis("off")
+        plt.pause(pause)
+
+        board = update_board(board)
+
+    plt.show()
